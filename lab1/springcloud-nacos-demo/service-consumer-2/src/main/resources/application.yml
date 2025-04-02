@@ -1,0 +1,16 @@
+server:
+  port: 16211
+
+spring:
+  application:
+    name: service-consumer-2
+  cloud:
+    nacos:
+      discovery:
+        #server-addr: 127.0.0.1:8848,127.0.0.1:8858,127.0.0.1:8868
+        server-addr: 127.0.0.1:7001/nacos
+        username: nacos
+        password: nacos
+        namespace: public
+        cluster-name: DEFAULT
+

@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: nacos-server-2
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848,127.0.0.1:8858,127.0.0.1:8868
+        service: nacos-cluster
+        cluster-name: NJ
+      config:
+        import-check:
+          enabled: false
+        server-addr: 127.0.0.1:8858
+server:
+  port: 8858
