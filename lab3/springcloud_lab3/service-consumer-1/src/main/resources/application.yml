@@ -1,0 +1,98 @@
+server:
+  port: 15001   # 每个模块需设置唯一端口，如8081、8082等
+spring:
+  application:
+    name: service-consumer-1  # 或 service-consumer-1 等，名称用于服务注册时标识
+  main:
+    allow-bean-definition-overriding: true
+  cloud:
+    loadbalancer:
+      ribbon:
+        enabled: false  # 关闭 Ribbon 相关配置，使用Spring Cloud LoadBalancer
+      # 默认使用轮询策略，无需配置
+#    openfeign:
+#      circuitbreaker:
+#        enabled: true
+
+# 设置Feign客户端访问路径
+service-provider-1-url:
+
+eureka:
+  instance:
+    prefer-ip-address: true
+    instance-id: "${spring.cloud.client.ip-address}:${server.port}"
+    lease-renewal-interval-in-seconds: 5
+    lease-expiration-duration-in-seconds: 15
+  client:
+    service-url:
+      defaultZone: "http://eurekaServer18000:18000/eureka/,http://eurekaServer18001:18001/eureka/,http://eurekaServer18002:18002/eureka/"
+
+# Resilience4j 配置
+resilience4j:
+  # 断路器实例A配置
+  circuitbreaker:
+    instances:
+      circuitBreakerA:
+        failureRateThreshold: 30   # OPEN状态的失败率阈值为30%
+        slidingWindowType: TIME_BASED   # 滑动窗口类型为时间窗口型
+        slidingWindowSize: 10   # 滑动窗口长度为10秒
+        minimumNumberOfCalls: 5   # 滑动窗口内最小请求个数为5
+#        minimumNumberOfCalls: 2   # 滑动窗口内最小请求个数为2
+        waitDurationInOpenState: 5000   # 从OPEN到HALF_OPEN等待时间为5秒
+        permittedNumberOfCallsInHalfOpenState: 3   # HALF_OPEN状态允许的请求数为3
+        registerHealthIndicator: true
+        automatic-transition-from-open-to-half-open-enabled: true
+        event-consumer-buffer-size: 5
+        recordExceptions:
+          - java.net.ConnectException
+          - java.io.IOException
+          - java.net.SocketException
+        ignoreExceptions: []  # 不忽略任何异常
+        
+      circuitBreakerB:
+        failureRateThreshold: 50   # OPEN状态的失败率阈值为50%
+        slowCallRateThreshold: 30   # OPEN状态的慢调用阈值为30%
+        slowCallDurationThreshold: 2000   # 判断慢调用的时间阈值为2秒
+        slidingWindowType: TIME_BASED   # 滑动窗口类型为时间窗口型
+        slidingWindowSize: 10   # 滑动窗口长度为10秒
+        minimumNumberOfCalls: 5   # 滑动窗口内最小请求个数为5
+        waitDurationInOpenState: 5000ms   # 从OPEN到HALF_OPEN等待时间为5秒
+        permittedNumberOfCallsInHalfOpenState: 3   # HALF_OPEN状态允许的请求数为3
+        registerHealthIndicator: true
+        automatic-transition-from-open-to-half-open-enabled: true
+        event-consumer-buffer-size: 5
+        record-exceptions:
+          - java.net.ConnectException
+          - java.io.IOException
+          - java.net.SocketException
+        ignore-exceptions: []
+  
+  # 隔离器配置
+  bulkhead:
+    instances:
+      bulkheadService:
+        maxConcurrentCalls: 10   # 允许线程并发执行的最大数量为10
+        maxWaitDuration: 20ms   # 允许线程阻塞的最大等待时间为20ms
+  
+  # 限流器配置
+  ratelimiter:
+    instances:
+      rateLimiterService:
+        limitRefreshPeriod: 2s   # 刷新周期为2秒
+        limitForPeriod: 5   # 一个周期内允许的最大请求数为5
+        timeoutDuration: 1s   # 等待获取许可的超时时间
+
+# 启用Actuator端点以监控断路器状态
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+  health:
+    circuitbreakers:
+      enabled: true
+    ratelimiters:
+      enabled: true

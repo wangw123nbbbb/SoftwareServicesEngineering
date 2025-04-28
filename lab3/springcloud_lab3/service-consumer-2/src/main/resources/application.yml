@@ -1,0 +1,22 @@
+server:
+  port: 15002   # 设置不同于consumer-1的端口
+spring:
+  application:
+    name: service-consumer-2
+  cloud:
+    loadbalancer:
+      ribbon:
+        enabled: false  # 关闭 Ribbon 相关配置
+      # 默认使用轮询策略
+      configurations:
+        random: true
+
+eureka:
+  instance:
+    prefer-ip-address: true
+    instance-id: "${spring.cloud.client.ip-address}:${server.port}"
+    lease-renewal-interval-in-seconds: 5
+    lease-expiration-duration-in-seconds: 15
+  client:
+    service-url:
+      defaultZone: "http://eurekaServer18000:18000/eureka/,http://eurekaServer18001:18001/eureka/,http://eurekaServer18002:18002/eureka/"
