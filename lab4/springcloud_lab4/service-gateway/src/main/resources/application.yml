@@ -1,0 +1,112 @@
+server:
+  port: 9000
+
+spring:
+  application:
+    name: service-gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true  # 开启从注册中心动态创建路由的功能
+          lower-case-service-id: true # 使用小写服务名访问
+      routes:
+        # 服务提供者1路由配置
+        - id: service-provider-1  # 路由ID
+          uri: lb://service-provider-1  # lb://表示启用负载均衡，后面跟注册的服务名称
+          predicates:
+            - Path=/provider1/**  # 路径匹配
+          filters:
+            - StripPrefix=1  # 去除路径前缀，如/provider1/api/xxx -> /api/xxx
+            - name: CircuitBreaker
+              args:
+                name: providerCircuitBreaker
+                fallbackUri: forward:/fallback
+
+        # 服务提供者2路由配置
+        - id: service-provider-1
+          uri: lb://service-provider-1
+          predicates:
+            - Path=/provider2/**
+          filters:
+            - StripPrefix=1
+            - name: CircuitBreaker
+              args:
+                name: providerCircuitBreaker
+                fallbackUri: forward:/fallback
+
+        # 服务消费者1路由配置
+        - id: service-consumer-1
+          uri: lb://service-consumer-1
+          predicates:
+            - Path=/consumer1/**
+          filters:
+            - StripPrefix=1
+            - name: CircuitBreaker
+              args:
+                name: consumerCircuitBreaker
+                fallbackUri: forward:/fallback
+
+        # 服务消费者2路由配置
+        - id: service-consumer-2
+          uri: lb://service-consumer-2
+          predicates:
+            - Path=/consumer2/**
+          filters:
+            - StripPrefix=1
+            - name: CircuitBreaker
+              args:
+                name: consumerCircuitBreaker
+                fallbackUri: forward:/fallback
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns:
+              - "http://localhost:*"
+              - "http://127.0.0.1:*"
+              - "http://your-domain.com"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            allowCredentials: true
+            maxAge: 3600
+
+# 服务注册到集群的三个Eureka Server
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:18000/eureka,http://localhost:18001/eureka,http://localhost:18002/eureka
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    instance-id: ${spring.application.name}:${server.port}
+    prefer-ip-address: true
+
+# 暴露actuator端点，方便监控
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  endpoint:
+    health:
+      show-details: always
+      
+# 断路器配置
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowSize: 10  # 滑动窗口大小
+        minimumNumberOfCalls: 5  # 最小调用次数
+        permittedNumberOfCallsInHalfOpenState: 3  # 半开状态允许的调用次数
+        failureRateThreshold: 50  # 失败率阈值
+        waitDurationInOpenState: 5000  # 开路状态等待时间，单位毫秒
+  timelimiter:
+    configs:
+      default:
+        timeoutDuration: 3s  # 超时时间
+        
+logging:
+  level:
+    org.springframework.cloud.gateway: debug
+    reactor.netty.http.client: debug 
