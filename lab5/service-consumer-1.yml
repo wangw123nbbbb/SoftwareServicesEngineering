@@ -1,21 +1,14 @@
-
 spring:
-  application:
-  # name: service-consumer-1 # 同上，通常在 bootstrap 中定义
   main:
     allow-bean-definition-overriding: true
   cloud:
     loadbalancer:
-      # Spring Cloud LoadBalancer 是默认的，ribbon.enabled: false 是为了禁用 Netflix Ribbon (如果它还在类路径上的话)
       ribbon:
         enabled: false
-
-# service-provider-1-url: # 这个配置项看起来是空的，如果不需要，可以移除
 
 eureka:
   instance:
     prefer-ip-address: true
-    # instance-id: "${spring.cloud.client.ip-address}:${server.port}" # 建议在 bootstrap.yml 中配置，或让 Eureka 自动生成
     lease-renewal-interval-in-seconds: 5
     lease-expiration-duration-in-seconds: 15
   client:
@@ -47,12 +40,12 @@ resilience4j:
         slidingWindowType: TIME_BASED
         slidingWindowSize: 10
         minimumNumberOfCalls: 5
-        waitDurationInOpenState: 5000ms # 保持 ms 单位
+        waitDurationInOpenState: 5000ms
         permittedNumberOfCallsInHalfOpenState: 3
         registerHealthIndicator: true
         automatic-transition-from-open-to-half-open-enabled: true
         event-consumer-buffer-size: 5
-        record-exceptions: # resilience4j 的 YAML 配置通常用 kebab-case
+        record-exceptions:
           - java.net.ConnectException
           - java.io.IOException
           - java.net.SocketException
@@ -83,10 +76,6 @@ management:
     ratelimiters:
       enabled: true
 
-      # message: "Hello from config server for service-consumer-1!"
-    # 新增或修改以下测试属性
 greeting:
   message: "你好，配置来自 Config Server (Git)！专门为 service-consumer-1 定制。"
   from: "Git仓库-lab5/service-consumer-1.yml"
-
-
