@@ -1,19 +1,92 @@
+
 spring:
   application:
-  # name: service-provider-1 # spring.application.name 通常在 bootstrap 中定义，config server 根据它查找配置，这里可以省略或注释掉
-  # 如果在 bootstrap.yml 中定义了 spring.application.name，则 Config Server 会自动根据它查找，这里的文件名 service-provider-1.yml 已经表明了它是为谁准备的。
-  # 如果要在此处也写上，请确保与 bootstrap.yml 中的一致。
+  # name: service-consumer-1 # 同上，通常在 bootstrap 中定义
+  main:
+    allow-bean-definition-overriding: true
+  cloud:
+    loadbalancer:
+      # Spring Cloud LoadBalancer 是默认的，ribbon.enabled: false 是为了禁用 Netflix Ribbon (如果它还在类路径上的话)
+      ribbon:
+        enabled: false
+
+# service-provider-1-url: # 这个配置项看起来是空的，如果不需要，可以移除
 
 eureka:
   instance:
     prefer-ip-address: true
-    # instance-id: "${spring.cloud.client.ip-address}:${server.port}" # 此配置依赖于 server.port，建议在 bootstrap.yml 中配置，或让 Eureka 自动生成
+    # instance-id: "${spring.cloud.client.ip-address}:${server.port}" # 建议在 bootstrap.yml 中配置，或让 Eureka 自动生成
     lease-renewal-interval-in-seconds: 5
     lease-expiration-duration-in-seconds: 15
   client:
     service-url:
       defaultZone: "http://eurekaServer18000:18000/eureka/,http://eurekaServer18001:18001/eureka/,http://eurekaServer18002:18002/eureka/"
 
-# 在这里添加 service-provider-1 和 service-provider-2 共享的其他配置
-# 例如，它们可能连接到相同的数据库，或者有其他共同的业务参数
-# message: "Hello from config server for service-provider-1 cluster!"
+resilience4j:
+  circuitbreaker:
+    instances:
+      circuitBreakerA:
+        failureRateThreshold: 30
+        slidingWindowType: TIME_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        waitDurationInOpenState: 5000
+        permittedNumberOfCallsInHalfOpenState: 3
+        registerHealthIndicator: true
+        automatic-transition-from-open-to-half-open-enabled: true
+        event-consumer-buffer-size: 5
+        recordExceptions:
+          - java.net.ConnectException
+          - java.io.IOException
+          - java.net.SocketException
+        ignoreExceptions: []
+      circuitBreakerB:
+        failureRateThreshold: 50
+        slowCallRateThreshold: 30
+        slowCallDurationThreshold: 2000
+        slidingWindowType: TIME_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        waitDurationInOpenState: 5000ms # 保持 ms 单位
+        permittedNumberOfCallsInHalfOpenState: 3
+        registerHealthIndicator: true
+        automatic-transition-from-open-to-half-open-enabled: true
+        event-consumer-buffer-size: 5
+        record-exceptions: # resilience4j 的 YAML 配置通常用 kebab-case
+          - java.net.ConnectException
+          - java.io.IOException
+          - java.net.SocketException
+        ignore-exceptions: []
+  bulkhead:
+    instances:
+      bulkheadService:
+        maxConcurrentCalls: 10
+        maxWaitDuration: 20ms
+  ratelimiter:
+    instances:
+      rateLimiterService:
+        limitRefreshPeriod: 2s
+        limitForPeriod: 5
+        timeoutDuration: 1s
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+  health:
+    circuitbreakers:
+      enabled: true
+    ratelimiters:
+      enabled: true
+
+      # message: "Hello from config server for service-consumer-1!"
+    # 新增或修改以下测试属性
+greeting:
+  message: "你好，配置来自 Config Server (Git)！专门为 service-consumer-1 定制。"
+  from: "Git仓库-lab5/service-consumer-1.yml"
+
+
