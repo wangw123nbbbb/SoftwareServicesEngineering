@@ -97,5 +97,5 @@ eureka:
       defaultZone: "http://eurekaServer18000:18000/eureka/,http://eurekaServer18001:18001/eureka/,http://eurekaServer18002:18002/eureka/"
 
 greeting:
-  message: "你好，配置来自 Config Server (Git)！专门为 service-consumer-1 定制。"
+  message: "你好，已经更新好的配置来自 Config Server (Git)！专门为 service-consumer-1 定制。"
   from: "Git仓库-lab5/service-consumer-1.yml"
