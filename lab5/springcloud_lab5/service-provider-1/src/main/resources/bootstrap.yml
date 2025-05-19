@@ -1,0 +1,49 @@
+server:
+  port: 16001 # 实例特定端口
+
+spring:
+  application:
+    name: service-provider-1 # 应用名称，用于 Config Server 查找配置和 Eureka 注册
+  cloud:
+    config:
+      # uri: http://localhost:8888 # 直接指定 Config Server 地址 (单机模式)
+      discovery:
+        enabled: true # 通过服务发现查找 Config Server
+        service-id: config-server # Config Server 注册到 Eureka 的名称
+      fail-fast: true # 快速失败，如果连接不上 Config Server 则启动失败
+      retry:
+        initial-interval: 1000
+        max-attempts: 6
+        multiplier: 1.1
+        max-interval: 2000
+    # Spring Cloud Bus with RabbitMQ
+    bus:
+      enabled: true # 这个通常是在 application.yml (从config server加载) 中配置，但放在 bootstrap 也可以，确保总线尽早启用
+  rabbitmq:
+    host: localhost # RabbitMQ 服务器地址
+    port: 5672      # RabbitMQ 服务器端口
+    username: guest   # RabbitMQ 用户名
+    password: guest   # RabbitMQ 密码
+
+eureka:
+  instance:
+    prefer-ip-address: true
+    # instance-id: ${spring.application.name}:${server.port}
+    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
+    lease-renewal-interval-in-seconds: 5
+    lease-expiration-duration-in-seconds: 15
+  client:
+    service-url:
+      defaultZone: "http://eurekaServer18000:18000/eureka/,http://eurekaServer18001:18001/eureka/,http://eurekaServer18002:18002/eureka/"
+    register-with-eureka: true
+    fetch-registry: true
+
+# Actuator endpoints (用于 /bus/refresh)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*" # 暴露所有端点，包括 /bus/refresh
+  endpoint:
+    health:
+      show-details: always 

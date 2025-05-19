@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>跨域测试</title>
+    <script>
+        fetch('http://localhost:9000/provider1/api/test', {
+            method: 'GET',
+            headers: {
+                'Authorization': 'Bearer valid-token'
+            }
+        })
+            .then(response => response.json())
+            .then(data => console.log(data));
+    </script>
+</head>
+<body>
+<h1>跨域测试</h1>
+<p>查看控制台输出</p>
+</body>
+</html>

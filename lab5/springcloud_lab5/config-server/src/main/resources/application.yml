@@ -1,0 +1,84 @@
+server:
+  port: 8888
+
+spring:
+  application:
+    name: config-server
+  profiles:
+    active: git # 使用 git 作为配置源
+  main:
+    allow-bean-definition-overriding: true
+  cloud:
+    config:
+      server:
+        # native:
+        #   search-locations: file:///C:/Users/java/config-repo  # 使用本地文件系统
+        git:
+          uri: https://github.com/wangw123nbbbb/SoftwareServicesEngineering.git
+          # username: YOUR_GIT_USERNAME  # 如果需要认证，取消注释并填写
+          # password: YOUR_GIT_PASSWORD  # 如果需要认证，取消注释并填写
+          default-label: main # Git 仓库的分支
+          search-paths:
+            - / # 搜索根目录
+            - /* # 搜索所有一级子目录
+            - lab5 # 直接指定lab5目录
+            - '{application}' # 默认配置，会查找与应用名同名的目录或文件
+            - '{application}/{profile}' # 会查找应用名/环境名的目录或文件
+            - 'lab5' # 明确指定lab5目录
+            - 'lab5/{application}-{profile}' # 例如 lab5/service-provider-1-dev.yml
+          clone-on-start: true # 可以在启动时克隆仓库，对于某些网络环境可能需要
+          force-pull: true # 每次请求时都强制拉取最新的配置
+          timeout: 15 # 增加 Git 操作超时时间
+          skip-ssl-validation: true # 跳过SSL验证
+      # 允许客户端通过服务发现来找到config server (用于集群)
+      discovery:
+        enabled: true
+    # Spring Cloud Bus with RabbitMQ
+    bus:
+      enabled: true
+      trace:
+        enabled: true # 开启总线追踪，便于调试
+    loadbalancer:
+      ribbon:
+        enabled: false
+  rabbitmq:
+    host: localhost # RabbitMQ 服务器地址
+    port: 5672      # RabbitMQ 服务器端口
+    username: guest   # RabbitMQ 用户名
+    password: guest   # RabbitMQ 密码
+
+# Eureka Client 配置 (用于注册到服务注册中心)
+eureka:
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
+    lease-renewal-interval-in-seconds: 5
+    lease-expiration-duration-in-seconds: 15
+    # hostname: localhost # 在集群和复杂网络环境下可能需要明确指定
+  client:
+    service-url:
+      defaultZone: http://eurekaServer18000:18000/eureka/,http://eurekaServer18001:18001/eureka/,http://eurekaServer18002:18002/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+
+# Actuator endpoints (用于 /bus/refresh)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*" # 暴露所有端点，包括 /bus/refresh
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    org.springframework.cloud.config.server: TRACE
+    org.springframework.cloud.config.server.environment: TRACE
+    org.eclipse.jgit: DEBUG
+    org.springframework.web: DEBUG
+
+# New greeting for service-provider-1
+# greeting:
+#   message: "本地配置：你好，配置来自本地文件！专门为 service-provider-1 定制。"
+#   from: "本地文件系统-service-provider-1.yml" 

@@ -1,0 +1,15 @@
+server:
+  port: 18002
+spring:
+  application:
+    name: "eureka-service"
+eureka:
+  instance:
+    hostname: "eurekaServer18002"
+  client:
+    register-with-eureka: false
+    fetch-registry: true
+    service-url:
+      defaultZone: "http://eurekaServer18000:18000/eureka/,http://eurekaServer18001:18001/eureka/"
+  server:
+    enable-self-preservation: false
